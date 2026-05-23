@@ -4,6 +4,7 @@ import { type AnyNode, type CeilingNode, useScene } from '@pascal-app/core'
 import {
   ActionButton,
   ActionGroup,
+  AppearanceSection,
   PanelSection,
   PanelWrapper,
   SliderControl,
@@ -152,6 +153,7 @@ export function CeilingPanel() {
       title={node.name || 'Ceiling'}
       width={320}
     >
+      <AppearanceSection node={node} />
       <PanelSection title="Height">
         <SliderControl
           label="Height"

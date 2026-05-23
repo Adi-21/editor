@@ -1,5 +1,6 @@
 export type { EditorProps } from './components/editor'
 export { default as Editor } from './components/editor'
+export { ExportManager } from './components/editor/export-manager'
 export {
   type SnapshotCameraData,
   ThumbnailGenerator,
@@ -118,7 +119,22 @@ export {
 } from './components/ui/primitives/dropdown-menu'
 export { useSidebarStore } from './components/ui/primitives/sidebar'
 export { Slider } from './components/ui/primitives/slider'
+export { AppearanceSection } from './components/ui/appearance/appearance-section'
+export {
+  type MaterialFinish,
+  MaterialFinishToggle,
+} from './components/ui/appearance/material-finish-toggle'
+export { PaletteStrip } from './components/ui/appearance/palette-strip'
+export { SwatchGrid } from './components/ui/appearance/swatch-grid'
 export { SceneLoader } from './components/ui/scene-loader'
+export { ShareMenu } from './components/ui/share-menu'
+export { type StudioTheme, ThemeSwitcher, useStudioTheme } from './components/ui/theme-switcher'
+export {
+  DEFAULT_SCENE_PALETTE,
+  readScenePalette,
+  useScenePalette,
+  writeScenePalette,
+} from './lib/scene-palette'
 export type { ExtraPanel } from './components/ui/sidebar/icon-rail'
 export { ItemsPanel } from './components/ui/sidebar/panels/items-panel'
 export {
@@ -137,6 +153,7 @@ export type { SaveStatus } from './hooks/use-auto-save'
 export { type UseDragActionArgs, useDragAction } from './hooks/use-drag-action'
 // Phase 5 Stage D — extras for kind-owned placement tools (FenceTool etc.).
 export { markToolCancelConsumed } from './hooks/use-keyboard'
+export { type FormFactor, useFormFactor, useIsMobile } from './hooks/use-mobile'
 export { EDITOR_LAYER } from './lib/constants'
 // Helper libs used by the kind-owned roof / stair / elevator panels.
 export {
@@ -170,6 +187,18 @@ export {
 export { duplicateRoofSubtree } from './lib/roof-duplication'
 export type { SceneGraph } from './lib/scene'
 export { applySceneGraphToEditor } from './lib/scene'
+export { CURATED_PALETTES, type CuratedPalette } from './lib/curated-palettes'
+export {
+  buildRoom,
+  type RoomSpec,
+} from './components/ui/panels/presets/templates/builders'
+export {
+  findTemplate,
+  type TemplateEntry,
+  type TemplateMood,
+  type TemplateRoom,
+  TEMPLATES,
+} from './components/ui/panels/presets/templates'
 export { triggerSFX } from './lib/sfx-bus'
 export { duplicateStairSubtree } from './lib/stair-duplication'
 // `cn` (twMerge + clsx) — used by kind-owned panels in `@pascal-app/

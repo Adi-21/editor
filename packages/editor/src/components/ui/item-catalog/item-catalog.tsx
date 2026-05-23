@@ -79,8 +79,8 @@ export function ItemCatalog({
 
   return (
     <div
-      className="grid gap-2"
-      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}
+      className="grid gap-2.5"
+      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(108px, 1fr))' }}
     >
       {leadingTile}
       {filteredItems.map((item, index) => {

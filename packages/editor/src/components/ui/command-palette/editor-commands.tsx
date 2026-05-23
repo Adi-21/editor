@@ -27,6 +27,7 @@ import {
   PencilLine,
   Plus,
   Redo2,
+  Smartphone,
   Sparkles,
   Square,
   SquareStack,
@@ -379,6 +380,14 @@ export function EditorCommands() {
               icon: <Box className="h-4 w-4" />,
               keywords: ['export', 'glb', 'gltf', '3d', 'model', 'download'],
               execute: () => run(() => exportScene()),
+            },
+            {
+              id: 'editor.export.usdz',
+              label: 'Export for AR (USDZ)',
+              group: 'Export & Share',
+              icon: <Smartphone className="h-4 w-4" />,
+              keywords: ['export', 'usdz', 'ar', 'quick look', 'iphone', 'ipad', 'vision pro'],
+              execute: () => run(() => exportScene('usdz')),
             },
           ]
         : []),

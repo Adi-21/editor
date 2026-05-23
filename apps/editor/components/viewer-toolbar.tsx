@@ -28,11 +28,16 @@ import {
   EyeOff,
   Footprints,
   Grid2X2,
+  Moon,
   PenLine,
+  Presentation,
   Sparkles,
+  Sun,
   SwatchBook,
 } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { type ReactNode, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from './toolbar-tooltip'
@@ -106,7 +111,7 @@ const SHADING_OPTIONS = [
   { id: 'rendered', name: 'Rendered', detail: 'Full ambient occlusion', icon: Sparkles },
 ] as const
 
-function ViewModeControl() {
+export function ViewModeControl() {
   const viewMode = useEditor((state) => state.viewMode)
   const setViewMode = useEditor((state) => state.setViewMode)
 
@@ -458,7 +463,7 @@ function CameraModeToggle() {
   )
 }
 
-function WalkthroughButton() {
+export function WalkthroughButton() {
   const isFirstPersonMode = useEditor((state) => state.isFirstPersonMode)
   const setFirstPersonMode = useEditor((state) => state.setFirstPersonMode)
 
@@ -478,7 +483,7 @@ function WalkthroughButton() {
   )
 }
 
-function PreviewButton() {
+export function PreviewButton() {
   return (
     <ToolbarTooltip label="Preview mode">
       <button
@@ -493,15 +498,33 @@ function PreviewButton() {
   )
 }
 
-export function CommunityViewerToolbarLeft() {
+export function PresentButton() {
+  const params = useParams<{ id?: string }>()
+  const sceneId = params?.id
+  if (!sceneId) return null
+
   return (
-    <>
-      <CollapseSidebarButton />
-      <ViewModeControl />
-    </>
+    <ToolbarTooltip label="Present (read-only + AR)">
+      <Link
+        className="flex items-center gap-1.5 px-2.5 font-medium text-muted-foreground/80 text-xs transition-colors hover:bg-white/8 hover:text-foreground/90"
+        href={`/scene/${sceneId}/present`}
+        target="_blank"
+      >
+        <Presentation className="h-3.5 w-3.5 shrink-0" />
+        <span>Present</span>
+      </Link>
+    </ToolbarTooltip>
   )
 }
 
+export function CommunityViewerToolbarLeft() {
+  // 2D/3D moved to the top bar (Canva/Framer restructure, B0′.1) — the
+  // floating left pill keeps just the sidebar collapse.
+  return <CollapseSidebarButton />
+}
+
+// Advanced view toggles only. Identity / 2D-3D / theme / walkthrough /
+// preview / present / share now live in <SceneTopBar>. (B0′.1/.3)
 export function CommunityViewerToolbarRight() {
   return (
     <div className={TOOLBAR_CONTAINER}>
@@ -515,9 +538,6 @@ export function CommunityViewerToolbarRight() {
       <div className="my-1.5 w-px bg-border/50" />
       <UnitToggle />
       <CameraModeToggle />
-      <div className="my-1.5 w-px bg-border/50" />
-      <WalkthroughButton />
-      <PreviewButton />
     </div>
   )
 }

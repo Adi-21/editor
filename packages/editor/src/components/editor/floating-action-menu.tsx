@@ -141,9 +141,11 @@ export function FloatingActionMenu() {
       const box = new THREE.Box3().setFromObject(obj)
       if (!box.isEmpty()) {
         const center = box.getCenter(new THREE.Vector3())
-        // Position above the object, with extra offset for walls/slabs to avoid covering measurement labels
+        // Position above the object, with extra offset for walls/slabs to
+        // avoid covering measurement labels (height "H 2.5m" etc. sit just
+        // above the box top — owner feedback: 0.8m wasn't enough clearance).
         const isStructural = node && [...DELETE_ONLY_TYPES, ...HOLE_TYPES].includes(node.type)
-        const yOffset = isStructural ? 0.8 : 0.3
+        const yOffset = isStructural ? 1.6 : 0.3
         groupRef.current.position.set(center.x, box.max.y + yOffset, center.z)
       }
 

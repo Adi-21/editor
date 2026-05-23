@@ -1,3 +1,5 @@
+'use client'
+
 import { emitter, useScene, validateBuildJson } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { TreeView, VisualJson } from '@visual-json/react'

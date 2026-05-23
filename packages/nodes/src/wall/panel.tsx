@@ -13,6 +13,7 @@ import {
 import {
   ActionButton,
   ActionGroup,
+  AppearanceSection,
   PanelSection,
   PanelWrapper,
   SliderControl,
@@ -126,6 +127,7 @@ export default function WallPanel() {
       title={node.name || 'Wall'}
       width={280}
     >
+      <AppearanceSection node={node} />
       <PanelSection title="Dimensions">
         <SliderControl
           label="Length"

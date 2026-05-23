@@ -6,12 +6,14 @@
 import {
   applySceneGraphToEditor,
   Editor,
+  ItemsPanel,
   type SceneGraph,
   type SidebarTab,
 } from '@pascal-app/editor'
-import Link from 'next/link'
+import { Layers, Package, Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { SceneTopBar } from './scene-topbar'
 import { CommunityViewerToolbarLeft, CommunityViewerToolbarRight } from './viewer-toolbar'
 
 export interface SceneMeta {
@@ -32,6 +34,22 @@ const SIDEBAR_TABS: (SidebarTab & { component: React.ComponentType })[] = [
     id: 'site',
     label: 'Scene',
     component: () => null, // Built-in SitePanel handles this
+    mobileDefaultSnap: 0.5,
+    mobileIcon: <Layers className="h-5 w-5" />,
+  },
+  {
+    id: 'items',
+    label: 'Items',
+    component: ItemsPanel,
+    mobileDefaultSnap: 0.5,
+    mobileIcon: <Package className="h-5 w-5" />,
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    component: () => null, // Built-in SettingsPanel handles this
+    mobileDefaultSnap: 0.5,
+    mobileIcon: <Settings className="h-5 w-5" />,
   },
 ]
 
@@ -187,16 +205,9 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
           <p className="font-medium text-destructive text-xs">{saveError}</p>
         </div>
       )}
-      <div className="pointer-events-none absolute top-4 right-4 z-40 flex items-center gap-2">
-        <Link
-          className="pointer-events-auto rounded-md border border-border bg-background/90 px-3 py-1.5 font-medium text-xs shadow-sm backdrop-blur hover:bg-accent/40"
-          href="/scenes"
-        >
-          All scenes
-        </Link>
-      </div>
       <Editor
         layoutVersion="v2"
+        navbarSlot={<SceneTopBar sceneId={meta.id} sceneName={meta.name} />}
         onLoad={handleLoad}
         onSave={handleSave}
         onThumbnailCapture={handleThumb}

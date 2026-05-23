@@ -32,8 +32,20 @@ type ViewerState = {
   setSelection: (updates: Partial<SelectionPath>) => void
   resetSelection: () => void
   outliner: Outliner
-  exportScene: ((format?: 'glb' | 'stl' | 'obj') => Promise<void>) | null
-  setExportScene: (fn: ((format?: 'glb' | 'stl' | 'obj') => Promise<void>) | null) => void
+  exportScene:
+    | ((
+        format?: 'glb' | 'stl' | 'obj' | 'usdz',
+        options?: { download?: boolean },
+      ) => Promise<Blob | void>)
+    | null
+  setExportScene: (
+    fn:
+      | ((
+          format?: 'glb' | 'stl' | 'obj' | 'usdz',
+          options?: { download?: boolean },
+        ) => Promise<Blob | void>)
+      | null,
+  ) => void
 }
 declare const useViewer: import('zustand').UseBoundStore<import('zustand').StoreApi<ViewerState>>
 export default useViewer

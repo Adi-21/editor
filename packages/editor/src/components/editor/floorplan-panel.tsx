@@ -4721,35 +4721,27 @@ export function FloorplanPanel() {
   const isFloorplanFurnishContextActive = phase === 'furnish'
   const isFloorplanItemContextActive =
     isFloorplanFurnishContextActive || isFloorplanStructureContextActive
-  const canSelectFloorplanStairs =
-    (mode === 'select' &&
-      floorplanSelectionTool === 'click' &&
-      !movingNode &&
-      !movingFenceEndpoint &&
-      isFloorplanStructureContextActive) ||
-    isDeleteMode
-  const canSelectFloorplanElevators = canSelectFloorplanStairs
-  const canSelectFloorplanSpawns = canSelectFloorplanStairs
+  // Items / stairs / spawns / elevators are selectable in 2D regardless of
+  // phase — same behaviour as walls/slabs (which never had a phase gate).
+  // Previously these required `phase === 'structure'` or `'furnish'`,
+  // which meant a user starting in the default `site` phase couldn't click
+  // any item to select/edit it. Owner feedback 2026-05-20.
   const canSelectFloorplanItems =
     (mode === 'select' &&
       floorplanSelectionTool === 'click' &&
       !movingNode &&
-      !movingFenceEndpoint &&
-      isFloorplanItemContextActive) ||
+      !movingFenceEndpoint) ||
     isDeleteMode
-  const canFocusFloorplanStairs =
-    mode === 'select' &&
-    floorplanSelectionTool === 'click' &&
-    !movingNode &&
-    !movingFenceEndpoint &&
-    isFloorplanStructureContextActive
-  const canFocusFloorplanSpawns = canFocusFloorplanStairs
+  const canSelectFloorplanStairs = canSelectFloorplanItems
+  const canSelectFloorplanElevators = canSelectFloorplanItems
+  const canSelectFloorplanSpawns = canSelectFloorplanItems
   const canFocusFloorplanItems =
     mode === 'select' &&
     floorplanSelectionTool === 'click' &&
     !movingNode &&
-    !movingFenceEndpoint &&
-    isFloorplanItemContextActive
+    !movingFenceEndpoint
+  const canFocusFloorplanStairs = canFocusFloorplanItems
+  const canFocusFloorplanSpawns = canFocusFloorplanItems
   const visibleSitePolygon = phase === 'site' ? displaySitePolygon : null
   const shouldShowSiteBoundaryHandles = isSiteEditActive && visibleSitePolygon !== null
   const visibleZonePolygons = displayZonePolygons

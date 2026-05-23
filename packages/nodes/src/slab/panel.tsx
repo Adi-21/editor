@@ -4,6 +4,7 @@ import { type AnyNode, type SlabNode, useScene } from '@pascal-app/core'
 import {
   ActionButton,
   ActionGroup,
+  AppearanceSection,
   PanelSection,
   PanelWrapper,
   SliderControl,
@@ -157,6 +158,7 @@ export function SlabPanel() {
       title={node.name || 'Slab'}
       width={320}
     >
+      <AppearanceSection node={node} />
       <PanelSection title="Elevation">
         <SliderControl
           label="Height"

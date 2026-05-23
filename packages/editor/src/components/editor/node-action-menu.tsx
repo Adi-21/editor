@@ -3,6 +3,8 @@
 import { Icon } from '@iconify/react'
 import { Copy, Move, Spline, Trash2 } from 'lucide-react'
 import type { MouseEventHandler, PointerEventHandler } from 'react'
+import { CommentsPopover } from '../ui/comments/comments-popover'
+import { SuggestItemsPopover } from '../ui/suggest-items/suggest-items-popover'
 
 type NodeActionMenuProps = {
   onAddHole?: MouseEventHandler<HTMLButtonElement>
@@ -79,6 +81,8 @@ export function NodeActionMenu({
           <Icon height={16} icon="carbon:cut-out" width={16} />
         </button>
       )}
+      <SuggestItemsPopover />
+      <CommentsPopover />
       {onDelete && (
         <button
           aria-label="Delete"

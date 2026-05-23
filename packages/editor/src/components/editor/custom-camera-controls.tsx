@@ -74,6 +74,22 @@ export const CustomCameraControls = () => {
     }
   }, [maxPolarAngle])
 
+  // Snappy feel — defaults in yomotsu/camera-controls are tuned for cinematic
+  // ease, which reads as lag in an editing context. We want wheel-zoom to
+  // follow the cursor (Figma/SketchUp behavior) and shorter smoothing so
+  // inspecting objects feels immediate.
+  useEffect(() => {
+    const c = controls.current
+    if (!c) return
+    c.dollyToCursor = true
+    c.smoothTime = 0.12
+    c.draggingSmoothTime = 0.04
+    c.dollySpeed = 1.6
+    c.truckSpeed = 2.5
+    c.azimuthRotateSpeed = 1.2
+    c.polarRotateSpeed = 1.2
+  }, [])
+
   const focusNode = useCallback(
     (nodeId: string) => {
       if (isPreviewMode || !controls.current) return
@@ -441,9 +457,9 @@ export const CustomCameraControls = () => {
   return (
     <CameraControls
       makeDefault
-      maxDistance={100}
+      maxDistance={250}
       maxPolarAngle={maxPolarAngle}
-      minDistance={10}
+      minDistance={1}
       minPolarAngle={0}
       mouseButtons={mouseButtons}
       onRest={onRest}
