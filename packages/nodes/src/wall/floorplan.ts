@@ -85,7 +85,11 @@ export function buildWallFloorplan(node: WallNode, ctx: GeometryContext): Floorp
       : isHovered && palette
         ? palette.wallHoverStroke
         : '#1f2937'
-  const fill = showSelectedChrome ? '#ffffff' : '#374151'
+  // Architect-plan poché — solid filled wall (matches stroke colour) so
+  // the 2D plan reads like a real floor plan rather than thin outlines
+  // around a light fill. Selected state keeps the white inversion so
+  // selection is visible against the dark default.
+  const fill = showSelectedChrome ? '#ffffff' : '#1f2937'
 
   const children: FloorplanGeometry[] = [
     {

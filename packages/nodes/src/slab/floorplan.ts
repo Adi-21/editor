@@ -82,6 +82,52 @@ export function buildSlabFloorplan(node: SlabNode, ctx: GeometryContext): Floorp
     })
   }
 
+  // Always-on architect-plan room label — room name above, computed area
+  // below, at the polygon centroid. Mirrors the reference floor plan
+  // (`Bedroom 1 / 137 sq ft`). Name strips a trailing " Slab" suffix so
+  // default auto-generated names ("Room 1 Slab") read as "Room 1".
+  const polyForLabel = outer
+  const area = polygonArea(polyForLabel)
+  if (area >= 0.5) {
+    const centroid = polygonCentroid(polyForLabel)
+    const rawName = typeof node.name === 'string' ? node.name.trim() : ''
+    const displayName = rawName ? rawName.replace(/\s*Slab\s*$/i, '').trim() : ''
+    const lineGap = 0.18
+    const labelStroke = (palette as { surface?: string } | undefined)?.surface ?? '#ffffff'
+    if (displayName) {
+      children.push({
+        kind: 'text',
+        text: displayName,
+        x: centroid[0],
+        y: centroid[1] - lineGap / 2,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        fontSize: 0.22,
+        fontWeight: '700',
+        textAnchor: 'middle',
+        dominantBaseline: 'middle',
+        fill: '#0f172a',
+        stroke: labelStroke,
+        strokeWidth: 0.04,
+        paintOrder: 'stroke',
+      })
+    }
+    children.push({
+      kind: 'text',
+      text: formatArea(area),
+      x: centroid[0],
+      y: displayName ? centroid[1] + lineGap / 2 : centroid[1],
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+      fontSize: 0.16,
+      fontWeight: '500',
+      textAnchor: 'middle',
+      dominantBaseline: 'middle',
+      fill: '#334155',
+      stroke: labelStroke,
+      strokeWidth: 0.03,
+      paintOrder: 'stroke',
+    })
+  }
+
   // Boundary editor — visible only when the slab is the active selection.
   if (isSelected) {
     appendRingEditor(children, polygon, undefined)
@@ -138,4 +184,36 @@ function appendRingEditor(
       payload: { holeIndex, vertexIndex: i },
     })
   }
+}
+
+// Shoelace formula → signed twice-the-area; take abs for the actual area
+// (m² since polygon points are in level-metres).
+function polygonArea(points: ReadonlyArray<readonly [number, number]>): number {
+  if (points.length < 3) return 0
+  let twiceArea = 0
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i]!
+    const [x2, y2] = points[(i + 1) % points.length]!
+    twiceArea += x1 * y2 - x2 * y1
+  }
+  return Math.abs(twiceArea) / 2
+}
+
+function polygonCentroid(points: ReadonlyArray<readonly [number, number]>): [number, number] {
+  if (points.length === 0) return [0, 0]
+  let sx = 0
+  let sy = 0
+  for (const [x, y] of points) {
+    sx += x
+    sy += y
+  }
+  return [sx / points.length, sy / points.length]
+}
+
+function formatArea(squareMetres: number): string {
+  // Metric default — the toolbar unit toggle is read by other systems for
+  // length labels; area is m² here to keep the slab emitter self-contained
+  // (no extra context plumbing). Imperial sq ft can be wired in once the
+  // unit makes it into `GeometryContext`.
+  return `${squareMetres.toFixed(squareMetres < 10 ? 1 : 0)} m²`
 }

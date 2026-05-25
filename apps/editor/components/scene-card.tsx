@@ -1,3 +1,8 @@
+'use client'
+
+// Importing from the @pascal-app/editor barrel pulls in hook-using
+// modules; marking this file 'use client' establishes a client boundary
+// so it can be rendered inside server pages without RSC errors.
 import { PaletteStrip } from '@pascal-app/editor'
 import { ArrowRight, Presentation } from 'lucide-react'
 import Link from 'next/link'
