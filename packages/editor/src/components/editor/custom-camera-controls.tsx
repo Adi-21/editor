@@ -47,48 +47,34 @@ export const CustomCameraControls = () => {
     raycaster.layers.enable(ZONE_LAYER)
   }, [camera, raycaster])
 
-  // Double-click any surface to focus the camera there — moves the orbit
-  // target to the hit point and pulls the camera in to roughly half the
-  // current viewing distance. Solves "I can't zoom into the kitchen / a
-  // corner" since wheel-zoom from then on dollies toward the focused
-  // pivot. Owner feedback 2026-05-27.
+  // Wheel-zoom toward whatever's under the cursor. NO double-click /
+  // other gestures — they conflict with selection/editing. On every
+  // zoom-IN tick, snap the orbit target onto the cursor's raycast hit
+  // point; the library's `dollyToCursor` then dollies the eye toward
+  // that pivot, so the camera converges on exactly what you're
+  // hovering. Zoom-out leaves the target alone — backing up from a
+  // pinned pivot feels right and avoids jitter. (Owner feedback
+  // 2026-05-27: "wherever I point my cursor and zoom there".)
   useEffect(() => {
     if (isPreviewMode || isFirstPersonMode) return
     const domEl = gl.domElement
-    const hitPoint = new Vector3()
     const ndc = new Vector2()
-    const handleDblClick = (event: MouseEvent) => {
+
+    const handleWheel = (event: WheelEvent) => {
       const c = controls.current
-      if (!c) return
-      // Convert pointer to normalised device coordinates relative to the canvas.
+      if (!c || event.deltaY >= 0) return // zoom-IN only
       const rect = domEl.getBoundingClientRect()
       ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
       ndc.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1)
       raycaster.setFromCamera(ndc, camera)
       const hits = raycaster.intersectObject(scene, true)
-      // Pick the first non-helper / non-light hit point.
       const hit = hits.find((h) => h.point && h.distance > 0.01)
       if (!hit) return
-      hitPoint.copy(hit.point)
-      c.getPosition(tempPosition)
-      c.getTarget(tempTarget)
-      const currentDistance = tempPosition.distanceTo(tempTarget)
-      const nextDistance = Math.max(1.5, currentDistance * 0.55)
-      // New eye position: same direction as before, but anchored on the
-      // hit point at the closer distance.
-      tempDelta.copy(tempPosition).sub(tempTarget).normalize().multiplyScalar(nextDistance)
-      c.setLookAt(
-        hitPoint.x + tempDelta.x,
-        hitPoint.y + tempDelta.y,
-        hitPoint.z + tempDelta.z,
-        hitPoint.x,
-        hitPoint.y,
-        hitPoint.z,
-        true,
-      )
+      c.setTarget(hit.point.x, hit.point.y, hit.point.z, false)
     }
-    domEl.addEventListener('dblclick', handleDblClick)
-    return () => domEl.removeEventListener('dblclick', handleDblClick)
+
+    domEl.addEventListener('wheel', handleWheel, { passive: true })
+    return () => domEl.removeEventListener('wheel', handleWheel)
   }, [camera, gl, raycaster, scene, isPreviewMode, isFirstPersonMode])
 
   useEffect(() => {
