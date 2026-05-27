@@ -84,7 +84,7 @@ export const CustomCameraControls = () => {
   useEffect(() => {
     const c = controls.current
     if (!c) return
-    c.dollyToCursor = true
+    c.dollyToCursor = false
     c.smoothTime = 0.12
     c.draggingSmoothTime = 0.04
     c.dollySpeed = 1.6
