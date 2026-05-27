@@ -11,7 +11,7 @@ import { GRID_LAYER, useViewer, ZONE_LAYER } from '@pascal-app/viewer'
 import { CameraControls, CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Box3, Vector2, Vector3 } from 'three'
+import { Box3, Vector3 } from 'three'
 import { EDITOR_LAYER } from '../../lib/constants'
 import useEditor from '../../store/use-editor'
 
@@ -38,44 +38,12 @@ export const CustomCameraControls = () => {
 
   const camera = useThree((state) => state.camera)
   const raycaster = useThree((state) => state.raycaster)
-  const gl = useThree((state) => state.gl)
-  const scene = useThree((state) => state.scene)
   useEffect(() => {
     camera.layers.enable(EDITOR_LAYER)
     camera.layers.enable(GRID_LAYER)
     raycaster.layers.enable(EDITOR_LAYER)
     raycaster.layers.enable(ZONE_LAYER)
   }, [camera, raycaster])
-
-  // Wheel-zoom toward whatever's under the cursor. NO double-click /
-  // other gestures — they conflict with selection/editing. On every
-  // zoom-IN tick, snap the orbit target onto the cursor's raycast hit
-  // point; the library's `dollyToCursor` then dollies the eye toward
-  // that pivot, so the camera converges on exactly what you're
-  // hovering. Zoom-out leaves the target alone — backing up from a
-  // pinned pivot feels right and avoids jitter. (Owner feedback
-  // 2026-05-27: "wherever I point my cursor and zoom there".)
-  useEffect(() => {
-    if (isPreviewMode || isFirstPersonMode) return
-    const domEl = gl.domElement
-    const ndc = new Vector2()
-
-    const handleWheel = (event: WheelEvent) => {
-      const c = controls.current
-      if (!c || event.deltaY >= 0) return // zoom-IN only
-      const rect = domEl.getBoundingClientRect()
-      ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-      ndc.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1)
-      raycaster.setFromCamera(ndc, camera)
-      const hits = raycaster.intersectObject(scene, true)
-      const hit = hits.find((h) => h.point && h.distance > 0.01)
-      if (!hit) return
-      c.setTarget(hit.point.x, hit.point.y, hit.point.z, false)
-    }
-
-    domEl.addEventListener('wheel', handleWheel, { passive: true })
-    return () => domEl.removeEventListener('wheel', handleWheel)
-  }, [camera, gl, raycaster, scene, isPreviewMode, isFirstPersonMode])
 
   useEffect(() => {
     if (isPreviewMode) return // Preview mode uses auto-navigate instead
@@ -106,10 +74,13 @@ export const CustomCameraControls = () => {
     }
   }, [maxPolarAngle])
 
-  // Snappy feel — defaults in yomotsu/camera-controls are tuned for cinematic
-  // ease, which reads as lag in an editing context. We want wheel-zoom to
-  // follow the cursor (Figma/SketchUp behavior) and shorter smoothing so
-  // inspecting objects feels immediate.
+  // Snappy feel — defaults in yomotsu/camera-controls are tuned for
+  // cinematic ease which reads as lag in an editing context. Shorter
+  // smoothing + dollyToCursor so wheel zoom converges on whatever's
+  // under the pointer (Figma/SketchUp). The earlier "sliding" with
+  // dollyToCursor was caused by a custom wheel handler that also moved
+  // the orbit target — that handler is gone; the library now owns
+  // wheel-zoom alone, which produces a clean zoom-toward-cursor.
   useEffect(() => {
     const c = controls.current
     if (!c) return
@@ -491,7 +462,7 @@ export const CustomCameraControls = () => {
       makeDefault
       maxDistance={250}
       maxPolarAngle={maxPolarAngle}
-      minDistance={0.3}
+      minDistance={1}
       minPolarAngle={0}
       mouseButtons={mouseButtons}
       onRest={onRest}
