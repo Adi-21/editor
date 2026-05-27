@@ -26,10 +26,30 @@ const SHADOWS_DISABLED =
 // deliberate middle ground — present, but not the heavy contact shadow there.
 const MAX_SHADOW_INTENSITY = 0.55
 
+// Day/night curves driven by `useViewer.timeOfDay` (0 = bright day,
+// 1 = full night). Modulates the active sceneTheme's lights without
+// replacing the underlying stylistic look.
+//
+// Intensity curve: full at 0 → ~12% at night (rooms still visible).
+// Warmth: cool blue tint at night, slight golden warm near "evening"
+// (around 0.7), neutral mid-range.
+function dayNightIntensityScale(timeOfDay: number): number {
+  const t = Math.max(0, Math.min(1, timeOfDay))
+  // 1.0 at t=0 ramping smoothly to 0.12 at t=1.
+  return 0.12 + 0.88 * (1 - t) ** 1.4
+}
+function dayNightTintHex(timeOfDay: number): string | null {
+  const t = Math.max(0, Math.min(1, timeOfDay))
+  if (t >= 0.85) return '#7c8db8' // cool moonlit blue
+  if (t >= 0.6) return '#f5b170' // warm evening
+  return null
+}
+
 export function Lights() {
   const sceneTheme = useViewer((state) => state.sceneTheme)
   const theme = getSceneTheme(sceneTheme)
   const shadows = useViewer((state) => state.shadows)
+  const timeOfDay = useViewer((state) => state.timeOfDay)
 
   const lightRefs = useRef<Array<DirectionalLight | null>>([])
   const shadowCamera = useRef<OrthographicCamera>(null)
@@ -83,26 +103,36 @@ export function Lights() {
       }
     }
 
+    // Day/night modulation — applied on top of the theme so the chosen
+    // scene-theme look is preserved but progressively dimmed and tinted.
+    const nightScale = dayNightIntensityScale(timeOfDay)
+    const tintHex = dayNightTintHex(timeOfDay)
+    const tintBlend = tintHex ? (timeOfDay >= 0.85 ? 0.6 : 0.3) : 0
+    const tintColor = tintHex ? new THREE.Color(tintHex) : null
+
     if (!initialized.current) {
       for (let index = 0; index < theme.lights.length; index++) {
         const config = theme.lights[index]
         const light = lightRefs.current[index]
         if (!(config && light)) continue
-        light.intensity = config.intensity
+        light.intensity = config.intensity * nightScale
         light.color.set(config.color)
+        if (tintColor) light.color.lerp(tintColor, tintBlend)
 
         if (config.castShadow && light.shadow) {
           light.shadow.intensity = config.intensity <= 1 ? config.intensity : MAX_SHADOW_INTENSITY
         }
       }
       if (hemiRef.current && theme.hemi) {
-        hemiRef.current.intensity = theme.hemi.intensity
+        hemiRef.current.intensity = theme.hemi.intensity * nightScale
         hemiRef.current.color.set(theme.hemi.sky)
+        if (tintColor) hemiRef.current.color.lerp(tintColor, tintBlend)
         hemiRef.current.groundColor.set(theme.hemi.ground)
       }
       if (ambientRef.current) {
-        ambientRef.current.intensity = theme.ambient.intensity
+        ambientRef.current.intensity = theme.ambient.intensity * nightScale
         ambientRef.current.color.set(theme.ambient.color)
+        if (tintColor) ambientRef.current.color.lerp(tintColor, tintBlend)
       }
       initialized.current = true
       return
@@ -113,20 +143,23 @@ export function Lights() {
       const light = lightRefs.current[index]
       if (!(config && light)) continue
 
-      light.intensity = THREE.MathUtils.lerp(light.intensity, config.intensity, dt)
+      light.intensity = THREE.MathUtils.lerp(light.intensity, config.intensity * nightScale, dt)
       let target = lightTargets.current[index]
       if (!target) {
         target = new THREE.Color()
         lightTargets.current[index] = target
       }
       target.set(config.color)
+      if (tintColor) target.lerp(tintColor, tintBlend)
       light.color.lerp(target, dt)
 
       if (config.castShadow && light.shadow) {
         if (light.shadow.intensity !== undefined) {
+          const targetShadowIntensity =
+            (config.intensity <= 1 ? config.intensity : MAX_SHADOW_INTENSITY) * nightScale
           light.shadow.intensity = THREE.MathUtils.lerp(
             light.shadow.intensity,
-            config.intensity <= 1 ? config.intensity : MAX_SHADOW_INTENSITY,
+            targetShadowIntensity,
             dt,
           )
         }
@@ -136,10 +169,11 @@ export function Lights() {
     if (hemiRef.current && theme.hemi) {
       hemiRef.current.intensity = THREE.MathUtils.lerp(
         hemiRef.current.intensity,
-        theme.hemi.intensity,
+        theme.hemi.intensity * nightScale,
         dt,
       )
       targets.hemiSky.set(theme.hemi.sky)
+      if (tintColor) targets.hemiSky.lerp(tintColor, tintBlend)
       hemiRef.current.color.lerp(targets.hemiSky, dt)
       targets.hemiGround.set(theme.hemi.ground)
       hemiRef.current.groundColor.lerp(targets.hemiGround, dt)
@@ -148,10 +182,11 @@ export function Lights() {
     if (ambientRef.current) {
       ambientRef.current.intensity = THREE.MathUtils.lerp(
         ambientRef.current.intensity,
-        theme.ambient.intensity,
+        theme.ambient.intensity * nightScale,
         dt,
       )
       targets.ambColor.set(theme.ambient.color)
+      if (tintColor) targets.ambColor.lerp(tintColor, tintBlend)
       ambientRef.current.color.lerp(targets.ambColor, dt)
     }
   })

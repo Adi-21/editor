@@ -11,7 +11,7 @@ import { GRID_LAYER, useViewer, ZONE_LAYER } from '@pascal-app/viewer'
 import { CameraControls, CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Box3, Vector3 } from 'three'
+import { Box3, Vector2, Vector3 } from 'three'
 import { EDITOR_LAYER } from '../../lib/constants'
 import useEditor from '../../store/use-editor'
 
@@ -38,12 +38,58 @@ export const CustomCameraControls = () => {
 
   const camera = useThree((state) => state.camera)
   const raycaster = useThree((state) => state.raycaster)
+  const gl = useThree((state) => state.gl)
+  const scene = useThree((state) => state.scene)
   useEffect(() => {
     camera.layers.enable(EDITOR_LAYER)
     camera.layers.enable(GRID_LAYER)
     raycaster.layers.enable(EDITOR_LAYER)
     raycaster.layers.enable(ZONE_LAYER)
   }, [camera, raycaster])
+
+  // Double-click any surface to focus the camera there — moves the orbit
+  // target to the hit point and pulls the camera in to roughly half the
+  // current viewing distance. Solves "I can't zoom into the kitchen / a
+  // corner" since wheel-zoom from then on dollies toward the focused
+  // pivot. Owner feedback 2026-05-27.
+  useEffect(() => {
+    if (isPreviewMode || isFirstPersonMode) return
+    const domEl = gl.domElement
+    const hitPoint = new Vector3()
+    const ndc = new Vector2()
+    const handleDblClick = (event: MouseEvent) => {
+      const c = controls.current
+      if (!c) return
+      // Convert pointer to normalised device coordinates relative to the canvas.
+      const rect = domEl.getBoundingClientRect()
+      ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      ndc.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1)
+      raycaster.setFromCamera(ndc, camera)
+      const hits = raycaster.intersectObject(scene, true)
+      // Pick the first non-helper / non-light hit point.
+      const hit = hits.find((h) => h.point && h.distance > 0.01)
+      if (!hit) return
+      hitPoint.copy(hit.point)
+      c.getPosition(tempPosition)
+      c.getTarget(tempTarget)
+      const currentDistance = tempPosition.distanceTo(tempTarget)
+      const nextDistance = Math.max(1.5, currentDistance * 0.55)
+      // New eye position: same direction as before, but anchored on the
+      // hit point at the closer distance.
+      tempDelta.copy(tempPosition).sub(tempTarget).normalize().multiplyScalar(nextDistance)
+      c.setLookAt(
+        hitPoint.x + tempDelta.x,
+        hitPoint.y + tempDelta.y,
+        hitPoint.z + tempDelta.z,
+        hitPoint.x,
+        hitPoint.y,
+        hitPoint.z,
+        true,
+      )
+    }
+    domEl.addEventListener('dblclick', handleDblClick)
+    return () => domEl.removeEventListener('dblclick', handleDblClick)
+  }, [camera, gl, raycaster, scene, isPreviewMode, isFirstPersonMode])
 
   useEffect(() => {
     if (isPreviewMode) return // Preview mode uses auto-navigate instead
@@ -459,7 +505,7 @@ export const CustomCameraControls = () => {
       makeDefault
       maxDistance={250}
       maxPolarAngle={maxPolarAngle}
-      minDistance={1}
+      minDistance={0.3}
       minPolarAngle={0}
       mouseButtons={mouseButtons}
       onRest={onRest}

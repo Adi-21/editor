@@ -2,6 +2,7 @@
 
 import { ShareMenu, ThemeSwitcher } from '@pascal-app/editor'
 import Link from 'next/link'
+import { DayNightArc } from './day-night-arc'
 import {
   PresentButton,
   PreviewButton,
@@ -61,6 +62,7 @@ export function SceneTopBar({ sceneId, sceneName }: SceneTopBarProps) {
 
       {/* Right — view + present + share */}
       <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
+        <DayNightArc />
         <div className="flex items-center rounded-xl border border-border bg-background/60 px-1">
           <PreviewButton />
           <WalkthroughButton />

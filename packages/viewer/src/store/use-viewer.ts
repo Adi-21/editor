@@ -37,6 +37,12 @@ type ViewerState = {
   sceneTheme: string
   setSceneTheme: (id: string) => void
 
+  // Day/night axis (0 = bright day, 1 = full night) — modulates light
+  // intensity + warmth on top of the active sceneTheme. Driven by the
+  // DayNightArc UI in the editor topbar.
+  timeOfDay: number
+  setTimeOfDay: (value: number) => void
+
   renderContext: RenderContext
   setRenderContext: (context: RenderContext) => void
 
@@ -130,6 +136,10 @@ const useViewer = create<ViewerState>()(
 
       sceneTheme: 'studio',
       setSceneTheme: (id) => set({ sceneTheme: id }),
+
+      timeOfDay: 0.25, // bright-morning default
+      setTimeOfDay: (value) =>
+        set({ timeOfDay: Math.max(0, Math.min(1, value)) }),
 
       renderContext: 'editor',
       setRenderContext: (context) => set({ renderContext: context }),
