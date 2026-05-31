@@ -100,7 +100,8 @@ export const CustomCameraControls = () => {
       // 3. Zoom factor — multiplicative, so step size scales naturally
       //    with current distance (controllable at both extremes).
       //    deltaY < 0 = wheel up = zoom IN.
-      const zoomFactor = event.deltaY < 0 ? 0.82 : 1.22
+      //    Gentle (~7-8% per tick) so it feels smooth, not snappy.
+      const zoomFactor = event.deltaY < 0 ? 0.93 : 1.075
 
       // 4. New eye = cursorPoint + (oldEye - cursorPoint) * factor.
       newEye.copy(oldEye).sub(cursorPoint).multiplyScalar(zoomFactor).add(cursorPoint)
@@ -152,6 +153,49 @@ export const CustomCameraControls = () => {
       controls.current.rotateTo(controls.current.azimuthAngle, maxPolarAngle, true)
     }
   }, [maxPolarAngle])
+
+  // Re-centre the orbit pivot at the start of every rotation gesture.
+  // Zoom-to-cursor drifts the orbit target toward the cursor's world
+  // hit (necessary to keep the cursor anchored on screen), but if you
+  // then rotate, the camera pivots around that drifted point and the
+  // whole layout appears to swing/slide. Snapping the target back to
+  // whatever's in the centre of the view at rotation-start fixes that
+  // — rotation feels like spinning the layout around its centre.
+  useEffect(() => {
+    const c = controls.current
+    if (!c) return
+    const ndc = new Vector2(0, 0) // dead-centre of canvas
+    const recentrePivot = () => {
+      const action = (c as unknown as { currentAction?: number }).currentAction
+      // ROTATE = 1 and TOUCH_ROTATE = 64 in the library's action bitmask;
+      // composite actions like TOUCH_ZOOM_ROTATE OR these in, so a bitwise
+      // check catches all rotate-involving gestures.
+      const ROTATE_MASK =
+        CameraControlsImpl.ACTION.ROTATE | CameraControlsImpl.ACTION.TOUCH_ROTATE
+      if (action === undefined || (action & ROTATE_MASK) === 0) return
+      raycaster.setFromCamera(ndc, camera)
+      const hits = raycaster.intersectObject(scene, true)
+      const hit = hits.find((h) => h.point && h.distance > 0.001)
+      if (hit) {
+        c.setTarget(hit.point.x, hit.point.y, hit.point.z, false)
+      } else {
+        // No geometry in the centre → use a ground-plane fallback
+        // at the camera's current focus distance.
+        c.getPosition(tempPosition)
+        c.getTarget(tempTarget)
+        const focusDist = tempPosition.distanceTo(tempTarget)
+        const ray = raycaster.ray
+        c.setTarget(
+          ray.origin.x + ray.direction.x * focusDist,
+          ray.origin.y + ray.direction.y * focusDist,
+          ray.origin.z + ray.direction.z * focusDist,
+          false,
+        )
+      }
+    }
+    c.addEventListener('controlstart', recentrePivot)
+    return () => c.removeEventListener('controlstart', recentrePivot)
+  }, [camera, raycaster, scene])
 
   // Snappy feel — defaults in yomotsu/camera-controls are tuned for
   // cinematic ease which reads as lag in an editing context. Shorter
