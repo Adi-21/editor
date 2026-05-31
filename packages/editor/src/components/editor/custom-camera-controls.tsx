@@ -25,6 +25,16 @@ const tempTarget = new Vector3()
 const DEFAULT_MAX_POLAR_ANGLE = Math.PI / 2 - 0.1
 const DEBUG_MAX_POLAR_ANGLE = Math.PI - 0.05
 
+// Distance limits for the custom zoom-toward-cursor handler. These MUST
+// match the minDistance / maxDistance props on <CameraControls> below,
+// because our custom wheel handler calls setLookAt() directly and that
+// bypasses the library's own min/max clamping. Without replicating the
+// clamp here the camera runs away — it either flies miles out (the whole
+// layout collapses to a dot in the centre) or punches straight through a
+// wall/floor when zooming in. Keep these three values in sync.
+const MIN_ZOOM_DIST = 0.5
+const MAX_ZOOM_DIST = 60
+
 export const CustomCameraControls = () => {
   const controls = useRef<CameraControlsImpl>(null!)
   const isPreviewMode = useEditor((s) => s.isPreviewMode)
@@ -59,6 +69,12 @@ export const CustomCameraControls = () => {
   // Library's wheel action is set to NONE for perspective (see
   // mouseButtons + updateConfig overrides) so this handler is the
   // only thing reacting to wheel — no two-system fight.
+  //
+  // CLAMPING: because setLookAt() bypasses the library's min/max
+  // distance limits, this handler replicates them itself (see steps
+  // 4b / 4c). It clamps both the eye→cursor distance AND, when there
+  // is a real surface hit, the eye→surface distance — the latter is
+  // the true "don't zoom through the wall" guard for interiors.
   useEffect(() => {
     if (isPreviewMode || isFirstPersonMode) return
     if (cameraModeForZoom === 'orthographic') return // library's ZOOM handles ortho
@@ -69,6 +85,7 @@ export const CustomCameraControls = () => {
     const oldTarget = new Vector3()
     const newEye = new Vector3()
     const eyeDelta = new Vector3()
+    const dirFromAnchor = new Vector3()
 
     const handleWheel = (event: WheelEvent) => {
       const c = controls.current
@@ -83,6 +100,10 @@ export const CustomCameraControls = () => {
 
       // 2. World point under cursor: prefer scene hit; fall back to a
       //    point along the ray at the current eye-to-target distance.
+      //    The fallback distance is CLAMPED so that a wheel tick over
+      //    empty space (when already zoomed far out) can't fling the
+      //    camera — the runaway step size was a big part of the
+      //    "zooms too much in both directions" problem.
       c.getPosition(oldEye)
       c.getTarget(oldTarget)
       const focusDist = oldEye.distanceTo(oldTarget)
@@ -91,20 +112,74 @@ export const CustomCameraControls = () => {
       if (hit) {
         cursorPoint.copy(hit.point)
       } else {
-        cursorPoint.copy(raycaster.ray.origin).addScaledVector(
-          raycaster.ray.direction,
-          focusDist,
-        )
+        const safeDist = Math.min(Math.max(focusDist, MIN_ZOOM_DIST), MAX_ZOOM_DIST)
+        cursorPoint.copy(raycaster.ray.origin).addScaledVector(raycaster.ray.direction, safeDist)
       }
 
       // 3. Zoom factor — multiplicative, so step size scales naturally
       //    with current distance (controllable at both extremes).
       //    deltaY < 0 = wheel up = zoom IN.
-      //    Gentle (~7-8% per tick) so it feels smooth, not snappy.
-      const zoomFactor = event.deltaY < 0 ? 0.93 : 1.075
+      //
+      //    deltaMode normalisation: mice send line deltas (chunky),
+      //    trackpads send pixel deltas (many small events). Scale the
+      //    per-event step by the delta magnitude, clamped, so both
+      //    input devices feel consistent instead of a fixed 7% jump
+      //    per event (which made trackpad zoom feel coarse).
+      const zoomingIn = event.deltaY < 0
+      let unit = Math.abs(event.deltaY)
+      if (event.deltaMode === 1) {
+        unit *= 16 // lines → approx pixels
+      } else if (event.deltaMode === 2) {
+        unit *= rect.height // pages → approx pixels
+      }
+      // Map the pixel delta into a gentle step fraction, clamped so a
+      // single large event can't jump too far.
+      const stepFraction = Math.min(Math.max(unit / 100, 0.04), 0.12)
+
+      // 3b. Adaptive near-surface step: when there is a real surface
+      //     under the cursor and the eye is getting close to it,
+      //     shrink the step so the final approach is fine-grained —
+      //     exactly when "build precisely" matters most.
+      let effectiveStep = stepFraction
+      if (hit && zoomingIn) {
+        const eyeToSurface = oldEye.distanceTo(hit.point)
+        // Below ~3x MIN_ZOOM_DIST start easing the step toward a small
+        // floor so the last stretch of zoom-in is delicate.
+        const closeBand = MIN_ZOOM_DIST * 3
+        if (eyeToSurface < closeBand) {
+          const t = Math.max(eyeToSurface - MIN_ZOOM_DIST, 0) / (closeBand - MIN_ZOOM_DIST)
+          // t = 0 at the surface, 1 at the edge of the band.
+          effectiveStep = Math.max(stepFraction * t, 0.015)
+        }
+      }
+
+      const zoomFactor = zoomingIn ? 1 - effectiveStep : 1 + effectiveStep
 
       // 4. New eye = cursorPoint + (oldEye - cursorPoint) * factor.
       newEye.copy(oldEye).sub(cursorPoint).multiplyScalar(zoomFactor).add(cursorPoint)
+
+      // 4b. Clamp distance from the anchor (cursor) point. This is the
+      //     general replacement for the library's minDistance /
+      //     maxDistance, which setLookAt() would otherwise bypass.
+      let dist = newEye.distanceTo(cursorPoint)
+      if (dist < MIN_ZOOM_DIST || dist > MAX_ZOOM_DIST) {
+        const clamped = Math.min(Math.max(dist, MIN_ZOOM_DIST), MAX_ZOOM_DIST)
+        dirFromAnchor.copy(newEye).sub(cursorPoint).normalize().multiplyScalar(clamped)
+        newEye.copy(cursorPoint).add(dirFromAnchor)
+      }
+
+      // 4c. Hard "don't go through the wall" guard. Clamping to the
+      //     cursor point isn't enough on its own: the cursor point can
+      //     be far away while a wall sits right in front of the eye.
+      //     When we have a genuine surface hit, never let the eye get
+      //     closer to THAT surface than MIN_ZOOM_DIST.
+      if (hit) {
+        const eyeToSurface = newEye.distanceTo(hit.point)
+        if (eyeToSurface < MIN_ZOOM_DIST) {
+          dirFromAnchor.copy(oldEye).sub(hit.point).normalize().multiplyScalar(MIN_ZOOM_DIST)
+          newEye.copy(hit.point).add(dirFromAnchor)
+        }
+      }
 
       // 5. Translate orbit target by the SAME delta — preserves look
       //    direction (no rotation, no perceived "slide"); cursor's
@@ -179,12 +254,36 @@ export const CustomCameraControls = () => {
       if (hit) {
         c.setTarget(hit.point.x, hit.point.y, hit.point.z, false)
       } else {
-        // No geometry in the centre → use a ground-plane fallback
-        // at the camera's current focus distance.
+        // No geometry in the centre → fall back to the intersection
+        // with the current level's ground plane (y = level height),
+        // which keeps rotation feeling grounded for floor-plan work
+        // instead of pivoting around an arbitrary point in mid-air.
         c.getPosition(tempPosition)
         c.getTarget(tempTarget)
-        const focusDist = tempPosition.distanceTo(tempTarget)
         const ray = raycaster.ray
+        let planeY = 0
+        if (currentLevelId) {
+          const levelMesh = sceneRegistry.nodes.get(currentLevelId)
+          if (levelMesh) {
+            planeY = levelMesh.position.y
+          }
+        }
+        // Intersect the centre ray with the horizontal plane at planeY.
+        // Guard against a near-parallel ray (no usable intersection):
+        // fall back to a point at the current focus distance.
+        if (Math.abs(ray.direction.y) > 1e-4) {
+          const t = (planeY - ray.origin.y) / ray.direction.y
+          if (t > 0) {
+            c.setTarget(
+              ray.origin.x + ray.direction.x * t,
+              planeY,
+              ray.origin.z + ray.direction.z * t,
+              false,
+            )
+            return
+          }
+        }
+        const focusDist = tempPosition.distanceTo(tempTarget)
         c.setTarget(
           ray.origin.x + ray.direction.x * focusDist,
           ray.origin.y + ray.direction.y * focusDist,
@@ -195,19 +294,19 @@ export const CustomCameraControls = () => {
     }
     c.addEventListener('controlstart', recentrePivot)
     return () => c.removeEventListener('controlstart', recentrePivot)
-  }, [camera, raycaster, scene])
+  }, [camera, raycaster, scene, currentLevelId])
 
   // Snappy feel — defaults in yomotsu/camera-controls are tuned for
   // cinematic ease which reads as lag in an editing context. Shorter
-  // smoothing + dollyToCursor so wheel zoom converges on whatever's
-  // under the pointer (Figma/SketchUp). The earlier "sliding" with
-  // dollyToCursor was caused by a custom wheel handler that also moved
-  // the orbit target — that handler is gone; the library now owns
-  // wheel-zoom alone, which produces a clean zoom-toward-cursor.
+  // smoothing keeps the wheel zoom responsive. dollyToCursor is left
+  // OFF for perspective because our custom wheel handler owns that
+  // mode entirely; for orthographic it is turned ON in the camera-mode
+  // effect below so the library's ZOOM action anchors on the cursor
+  // (perspective vs ortho need opposite settings, so it is set per
+  // mode rather than once here).
   useEffect(() => {
     const c = controls.current
     if (!c) return
-    c.dollyToCursor = false
     c.smoothTime = 0.12
     c.draggingSmoothTime = 0.04
     c.dollySpeed = 1.6
@@ -215,6 +314,19 @@ export const CustomCameraControls = () => {
     c.azimuthRotateSpeed = 1.2
     c.polarRotateSpeed = 1.2
   }, [])
+
+  // dollyToCursor must follow the camera mode:
+  //  - perspective: OFF — the custom wheel handler does zoom-to-cursor,
+  //    and leaving dollyToCursor on would let the library fight it.
+  //  - orthographic: ON — wheel = ACTION.ZOOM is owned by the library
+  //    in 2D, and dollyToCursor is what makes that ZOOM anchor on the
+  //    cursor instead of the viewport centre. With it OFF, ortho zoom
+  //    snaps to centre — the exact original complaint, just in 2D.
+  useEffect(() => {
+    const c = controls.current
+    if (!c) return
+    c.dollyToCursor = cameraModeForZoom === 'orthographic'
+  }, [cameraModeForZoom])
 
   const focusNode = useCallback(
     (nodeId: string) => {
@@ -247,9 +359,10 @@ export const CustomCameraControls = () => {
   // Configure mouse buttons based on control mode and camera mode.
   //
   // Wheel is set to NONE for perspective because our custom wheel
-  // handler (further down) does the proper zoom-toward-cursor. Ortho
+  // handler (further up) does the proper zoom-toward-cursor. Ortho
   // mode keeps the library's ZOOM which scales the viewport with the
-  // cursor as anchor — already correct in 2D.
+  // cursor as anchor (dollyToCursor is enabled for ortho) — already
+  // correct in 2D.
   const cameraMode = useViewer((state) => state.cameraMode)
   const mouseButtons = useMemo(() => {
     const wheelAction =
@@ -589,9 +702,9 @@ export const CustomCameraControls = () => {
   return (
     <CameraControls
       makeDefault
-      maxDistance={45}
+      maxDistance={MAX_ZOOM_DIST}
       maxPolarAngle={maxPolarAngle}
-      minDistance={2}
+      minDistance={MIN_ZOOM_DIST}
       minPolarAngle={0}
       mouseButtons={mouseButtons}
       onRest={onRest}
