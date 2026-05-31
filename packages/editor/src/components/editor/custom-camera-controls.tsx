@@ -11,7 +11,7 @@ import { GRID_LAYER, useViewer, ZONE_LAYER } from '@pascal-app/viewer'
 import { CameraControls, CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Box3, Vector3 } from 'three'
+import { Box3, Vector2, Vector3 } from 'three'
 import { EDITOR_LAYER } from '../../lib/constants'
 import useEditor from '../../store/use-editor'
 
@@ -38,12 +38,91 @@ export const CustomCameraControls = () => {
 
   const camera = useThree((state) => state.camera)
   const raycaster = useThree((state) => state.raycaster)
+  const gl = useThree((state) => state.gl)
+  const scene = useThree((state) => state.scene)
+  const cameraModeForZoom = useViewer((s) => s.cameraMode)
   useEffect(() => {
     camera.layers.enable(EDITOR_LAYER)
     camera.layers.enable(GRID_LAYER)
     raycaster.layers.enable(EDITOR_LAYER)
     raycaster.layers.enable(ZONE_LAYER)
   }, [camera, raycaster])
+
+  // Zoom-toward-cursor — proper version. Owner spec: cast a ray from
+  // the camera through the cursor, find the world point under it
+  // (scene hit, else a point along the ray at the current focus
+  // distance), then move BOTH the camera position AND the orbit
+  // target by the same delta toward/away from that point. Translating
+  // them together is what preserves the look direction and avoids the
+  // "sliding" that happens when only one of them moves.
+  //
+  // Library's wheel action is set to NONE for perspective (see
+  // mouseButtons + updateConfig overrides) so this handler is the
+  // only thing reacting to wheel — no two-system fight.
+  useEffect(() => {
+    if (isPreviewMode || isFirstPersonMode) return
+    if (cameraModeForZoom === 'orthographic') return // library's ZOOM handles ortho
+    const domEl = gl.domElement
+    const ndc = new Vector2()
+    const cursorPoint = new Vector3()
+    const oldEye = new Vector3()
+    const oldTarget = new Vector3()
+    const newEye = new Vector3()
+    const eyeDelta = new Vector3()
+
+    const handleWheel = (event: WheelEvent) => {
+      const c = controls.current
+      if (!c) return
+      event.preventDefault?.()
+
+      // 1. Cursor → NDC → ray.
+      const rect = domEl.getBoundingClientRect()
+      ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      ndc.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1)
+      raycaster.setFromCamera(ndc, camera)
+
+      // 2. World point under cursor: prefer scene hit; fall back to a
+      //    point along the ray at the current eye-to-target distance.
+      c.getPosition(oldEye)
+      c.getTarget(oldTarget)
+      const focusDist = oldEye.distanceTo(oldTarget)
+      const hits = raycaster.intersectObject(scene, true)
+      const hit = hits.find((h) => h.point && h.distance > 0.001)
+      if (hit) {
+        cursorPoint.copy(hit.point)
+      } else {
+        cursorPoint.copy(raycaster.ray.origin).addScaledVector(
+          raycaster.ray.direction,
+          focusDist,
+        )
+      }
+
+      // 3. Zoom factor — multiplicative, so step size scales naturally
+      //    with current distance (controllable at both extremes).
+      //    deltaY < 0 = wheel up = zoom IN.
+      const zoomFactor = event.deltaY < 0 ? 0.82 : 1.22
+
+      // 4. New eye = cursorPoint + (oldEye - cursorPoint) * factor.
+      newEye.copy(oldEye).sub(cursorPoint).multiplyScalar(zoomFactor).add(cursorPoint)
+
+      // 5. Translate orbit target by the SAME delta — preserves look
+      //    direction (no rotation, no perceived "slide"); cursor's
+      //    world point stays under the cursor on screen.
+      eyeDelta.copy(newEye).sub(oldEye)
+      const newTargetX = oldTarget.x + eyeDelta.x
+      const newTargetY = oldTarget.y + eyeDelta.y
+      const newTargetZ = oldTarget.z + eyeDelta.z
+
+      // 6. Apply with transition so the move is smoothed (smoothTime
+      //    set elsewhere). Library lerps the camera to the new pose.
+      c.setLookAt(newEye.x, newEye.y, newEye.z, newTargetX, newTargetY, newTargetZ, true)
+    }
+
+    // passive: false so preventDefault works (stops the page from
+    // scrolling when the canvas is the wheel target).
+    domEl.addEventListener('wheel', handleWheel, { passive: false })
+    return () => domEl.removeEventListener('wheel', handleWheel)
+  }, [camera, gl, raycaster, scene, isPreviewMode, isFirstPersonMode, cameraModeForZoom])
 
   useEffect(() => {
     if (isPreviewMode) return // Preview mode uses auto-navigate instead
@@ -121,14 +200,18 @@ export const CustomCameraControls = () => {
     [isPreviewMode],
   )
 
-  // Configure mouse buttons based on control mode and camera mode
+  // Configure mouse buttons based on control mode and camera mode.
+  //
+  // Wheel is set to NONE for perspective because our custom wheel
+  // handler (further down) does the proper zoom-toward-cursor. Ortho
+  // mode keeps the library's ZOOM which scales the viewport with the
+  // cursor as anchor — already correct in 2D.
   const cameraMode = useViewer((state) => state.cameraMode)
   const mouseButtons = useMemo(() => {
-    // Use ZOOM for orthographic camera, DOLLY for perspective camera
     const wheelAction =
       cameraMode === 'orthographic'
         ? CameraControlsImpl.ACTION.ZOOM
-        : CameraControlsImpl.ACTION.DOLLY
+        : CameraControlsImpl.ACTION.NONE
 
     return {
       left: isPreviewMode ? CameraControlsImpl.ACTION.SCREEN_PAN : CameraControlsImpl.ACTION.NONE,
@@ -197,10 +280,12 @@ export const CustomCameraControls = () => {
       const control = keyState.controlRight || keyState.controlLeft
       const space = keyState.space
 
+      // NONE for perspective — our custom wheel handler owns it (see
+      // zoom-toward-cursor useEffect at top of file). ZOOM for ortho.
       const wheelAction =
         cameraMode === 'orthographic'
           ? CameraControlsImpl.ACTION.ZOOM
-          : CameraControlsImpl.ACTION.DOLLY
+          : CameraControlsImpl.ACTION.NONE
       controls.current.mouseButtons.wheel = wheelAction
       controls.current.mouseButtons.middle = CameraControlsImpl.ACTION.SCREEN_PAN
       controls.current.mouseButtons.right = CameraControlsImpl.ACTION.ROTATE
@@ -462,7 +547,7 @@ export const CustomCameraControls = () => {
       makeDefault
       maxDistance={250}
       maxPolarAngle={maxPolarAngle}
-      minDistance={0.05}
+      minDistance={0.5}
       minPolarAngle={0}
       mouseButtons={mouseButtons}
       onRest={onRest}
