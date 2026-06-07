@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description: 'Terms of Service for Pascal Editor and the Pascal platform.',
+  description: 'Terms of Service for Beeaver — the 3D home & interior design platform at beeaver.in.',
 }
 
 export default function TermsPage() {
@@ -39,9 +39,9 @@ export default function TermsPage() {
           <section className="mb-8 space-y-4">
             <h2 className="font-semibold text-xl">1. Introduction</h2>
             <p className="text-foreground/90 leading-relaxed">
-              Welcome to Pascal Editor (&quot;Editor&quot;) and the Pascal platform at pascal.app
-              (&quot;Platform&quot;), operated by Pascal Group Inc. (&quot;we,&quot; &quot;us,&quot;
-              or &quot;our&quot;). By accessing or using our services, you agree to these Terms of
+              Welcome to Beeaver (the &quot;Platform&quot;), the 3D home & interior design product
+              at beeaver.in, operated by Beeaver (&quot;we,&quot; &quot;us,&quot; or
+              &quot;our&quot;). By accessing or using our services, you agree to these Terms of
               Service.
             </p>
           </section>
@@ -49,14 +49,16 @@ export default function TermsPage() {
           <section className="mb-8 space-y-4">
             <h2 className="font-semibold text-xl">2. The Editor and Platform</h2>
             <p className="text-foreground/90 leading-relaxed">
-              The Pascal Editor is open-source software released under the MIT License. You may use,
-              copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Editor
-              software in accordance with the MIT License terms.
+              Beeaver is built on top of the Pascal Editor engine
+              (github.com/pascalorg/editor), which is open-source software released by Pascal Group
+              Inc. under the MIT License. Beeaver&apos;s own additions, branding, and proprietary
+              code are owned by us and are not granted under that license. See our acknowledgments
+              for details.
             </p>
             <p className="text-foreground/90 leading-relaxed">
-              The Pascal platform (pascal.app) and its associated services, including user accounts,
-              cloud storage, and project hosting, are proprietary services owned and operated by
-              Pascal Group Inc. These Terms govern your use of the Platform.
+              The Beeaver platform (beeaver.in) and its associated services, including user
+              accounts, cloud storage, and project hosting, are proprietary services owned and
+              operated by Beeaver. These Terms govern your use of the Platform.
             </p>
           </section>
 
@@ -105,10 +107,11 @@ export default function TermsPage() {
           <section className="mb-8 space-y-4">
             <h2 className="font-semibold text-xl">6. Platform Ownership</h2>
             <p className="text-foreground/90 leading-relaxed">
-              The Platform, including its design, features, and proprietary code, is owned by Pascal
-              Group Inc. and protected by intellectual property laws. While the Editor source code
-              is open-source under the MIT License, the Platform services, branding, and
-              infrastructure remain our proprietary property.
+              The Platform&apos;s Beeaver-specific UI, branding, design, and proprietary additions
+              are owned by Beeaver and protected by intellectual property laws. The underlying
+              Pascal Editor engine is open-source under the MIT License (released by Pascal Group
+              Inc.); our additions are proprietary. The Platform services, infrastructure, and
+              hosted assets remain our property.
             </p>
           </section>
 
@@ -120,9 +123,9 @@ export default function TermsPage() {
               may also delete your account at any time by contacting us at{' '}
               <a
                 className="text-foreground underline hover:text-foreground/80"
-                href="mailto:support@pascal.app"
+                href="mailto:support@beeaver.in"
               >
-                support@pascal.app
+                support@beeaver.in
               </a>
               .
             </p>
@@ -166,9 +169,9 @@ export default function TermsPage() {
               If you have questions about these Terms, please contact us at{' '}
               <a
                 className="text-foreground underline hover:text-foreground/80"
-                href="mailto:support@pascal.app"
+                href="mailto:support@beeaver.in"
               >
-                support@pascal.app
+                support@beeaver.in
               </a>
               .
             </p>

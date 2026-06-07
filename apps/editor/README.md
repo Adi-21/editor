@@ -1,6 +1,11 @@
-# Pascal Editor
+# Beeaver — apps/editor
 
-A 3D building editor built with React Three Fiber and WebGPU.
+The Next.js host app for Beeaver, the 3D home & interior design platform.
+
+Built on top of the open-source Pascal Editor engine
+([pascalorg/editor](https://github.com/pascalorg/editor), MIT licensed) with
+Beeaver's product UI, brand, and proprietary additions. See the repo-root
+[`ACKNOWLEDGMENTS.md`](../../ACKNOWLEDGMENTS.md) for the full attribution.
 
 ## Repository Architecture
 

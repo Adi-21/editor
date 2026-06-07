@@ -122,7 +122,7 @@ export function PresentView({ graph, meta }: PresentViewProps) {
       <div className="pointer-events-none absolute top-5 left-5 z-10 flex items-center gap-3">
         <div className="pointer-events-auto rounded-xl border border-border/60 bg-background/80 px-3.5 py-2 shadow-lg backdrop-blur-md">
           <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wide">
-            Pascal · Presenting
+            Beeaver · Presenting
           </p>
           <h1 className="mt-0.5 font-semibold text-sm">{meta.name}</h1>
         </div>

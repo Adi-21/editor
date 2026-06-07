@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 
 export type StudioTheme = 'studio-warm' | 'studio-dusk' | 'studio-ocean'
 
-const STORAGE_KEY = 'pascal.theme'
+const STORAGE_KEY = 'beeaver.theme'
 const DEFAULT_THEME: StudioTheme = 'studio-warm'
 
 const THEMES: {

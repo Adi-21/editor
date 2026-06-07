@@ -1,14 +1,26 @@
-# Pascal Editor
+# Beeaver
 
-A 3D building editor built with React Three Fiber and WebGPU.
+> *Architecture and engineering, by nature's best builders.*
+
+A 3D home & interior design platform — sketch the floorplan, see it in 3D,
+furnish it with one prompt. Built on a React Three Fiber + WebGPU
+foundation.
+
+**Production:** [beeaver.in](https://beeaver.in)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![npm @pascal-app/core](https://img.shields.io/npm/v/@pascal-app/core?label=%40pascal-app%2Fcore)](https://www.npmjs.com/package/@pascal-app/core)
-[![npm @pascal-app/viewer](https://img.shields.io/npm/v/@pascal-app/viewer?label=%40pascal-app%2Fviewer)](https://www.npmjs.com/package/@pascal-app/viewer)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white)](https://discord.gg/SaBRA9t2)
-[![X (Twitter)](https://img.shields.io/badge/follow-%40pascal__app-black?logo=x&logoColor=white)](https://x.com/pascal_app)
 
-https://github.com/user-attachments/assets/8b50e7cf-cebe-4579-9cf3-8786b35f7b6b
+---
+
+Beeaver is built on top of the open-source **Pascal Editor** engine
+([pascalorg/editor](https://github.com/pascalorg/editor), MIT licensed) with
+substantial UI / UX additions, an architect-plan 2D renderer, prompt-driven
+furniture placement, Figma-style comments, a day-night lighting system, a
+Canva/Framer-style chrome, and other product features layered on top.
+See [`ACKNOWLEDGMENTS.md`](./ACKNOWLEDGMENTS.md) for the full open-source
+attribution.
+
+---
 
 
 

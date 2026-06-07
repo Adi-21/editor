@@ -33,7 +33,7 @@ const barlow = Barlow({
   display: 'swap',
 })
 
-const THEME_BOOTSTRAP = `(()=>{try{var t=localStorage.getItem('pascal.theme');var v=t==='studio-dusk'||t==='studio-ocean'||t==='studio-warm'?t:'studio-warm';document.documentElement.setAttribute('data-theme',v);}catch(e){document.documentElement.setAttribute('data-theme','studio-warm');}})();`
+const THEME_BOOTSTRAP = `(()=>{try{var t=localStorage.getItem('beeaver.theme');var v=t==='studio-dusk'||t==='studio-ocean'||t==='studio-warm'?t:'studio-warm';document.documentElement.setAttribute('data-theme',v);}catch(e){document.documentElement.setAttribute('data-theme','studio-warm');}})();`
 
 export default function RootLayout({
   children,
