@@ -248,16 +248,16 @@
 }
 
 /* Loaders */
-.pascal-loader-1 {
+.beeaver-loader-1 {
   width: 45px;
   aspect-ratio: 1;
   --c: no-repeat linear-gradient(currentColor 0 0);
   background: var(--c), var(--c), var(--c);
   animation:
-    pascal-l1-1 1s infinite,
-    pascal-l1-2 1s infinite;
+    beeaver-l1-1 1s infinite,
+    beeaver-l1-2 1s infinite;
 }
-@keyframes pascal-l1-1 {
+@keyframes beeaver-l1-1 {
   0%,
   100% {
     background-size: 20% 100%;
@@ -267,7 +267,7 @@
     background-size: 20% 20%;
   }
 }
-@keyframes pascal-l1-2 {
+@keyframes beeaver-l1-2 {
   0%,
   33% {
     background-position:
@@ -284,7 +284,7 @@
   }
 }
 
-.pascal-loader-2 {
+.beeaver-loader-2 {
   width: 45px;
   aspect-ratio: 0.75;
   --c: no-repeat linear-gradient(currentColor 0 0);
@@ -293,9 +293,9 @@
     var(--c) 50% 50%,
     var(--c) 100% 50%;
   background-size: 20% 50%;
-  animation: pascal-l2 1s infinite linear;
+  animation: beeaver-l2 1s infinite linear;
 }
-@keyframes pascal-l2 {
+@keyframes beeaver-l2 {
   20% {
     background-position:
       0% 0%,
@@ -322,7 +322,7 @@
   }
 }
 
-.pascal-loader-3 {
+.beeaver-loader-3 {
   width: 45px;
   aspect-ratio: 0.75;
   --c: no-repeat linear-gradient(currentColor 0 0);
@@ -331,9 +331,9 @@
     var(--c) 50% 100%,
     var(--c) 100% 100%;
   background-size: 20% 65%;
-  animation: pascal-l3 1s infinite linear;
+  animation: beeaver-l3 1s infinite linear;
 }
-@keyframes pascal-l3 {
+@keyframes beeaver-l3 {
   16.67% {
     background-position:
       0% 0%,
@@ -366,16 +366,16 @@
   }
 }
 
-.pascal-loader-4 {
+.beeaver-loader-4 {
   width: 45px;
   aspect-ratio: 1;
   --c: no-repeat linear-gradient(currentColor 0 0);
   background: var(--c), var(--c), var(--c);
   animation:
-    pascal-l4-1 1s infinite,
-    pascal-l4-2 1s infinite;
+    beeaver-l4-1 1s infinite,
+    beeaver-l4-2 1s infinite;
 }
-@keyframes pascal-l4-1 {
+@keyframes beeaver-l4-1 {
   0%,
   100% {
     background-size: 20% 100%;
@@ -385,7 +385,7 @@
     background-size: 20% 40%;
   }
 }
-@keyframes pascal-l4-2 {
+@keyframes beeaver-l4-2 {
   0%,
   33% {
     background-position:
@@ -402,16 +402,16 @@
   }
 }
 
-.pascal-loader-5 {
+.beeaver-loader-5 {
   width: 45px;
   aspect-ratio: 1;
   --c: no-repeat linear-gradient(currentColor 0 0);
   background: var(--c), var(--c), var(--c);
   animation:
-    pascal-l5-1 1s infinite,
-    pascal-l5-2 1s infinite;
+    beeaver-l5-1 1s infinite,
+    beeaver-l5-2 1s infinite;
 }
-@keyframes pascal-l5-1 {
+@keyframes beeaver-l5-1 {
   0%,
   100% {
     background-size: 20% 100%;
@@ -421,7 +421,7 @@
     background-size: 20% 40%;
   }
 }
-@keyframes pascal-l5-2 {
+@keyframes beeaver-l5-2 {
   0%,
   33% {
     background-position:

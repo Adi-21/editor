@@ -47,14 +47,14 @@ function loadBuiltinsSync(): void {
     if (typeof console !== 'undefined') {
       // biome-ignore lint/suspicious/noConsole: dev-only verification log
       console.info(
-        `[pascal:registry] loaded ${builtinPlugin.id} v${builtinPlugin.apiVersion} (${kinds.length} kinds: ${kinds.join(', ') || '∅'})`,
+        `[beeaver:registry] loaded ${builtinPlugin.id} v${builtinPlugin.apiVersion} (${kinds.length} kinds: ${kinds.join(', ') || '∅'})`,
       )
     }
     // Expose the registry on globalThis for ad-hoc dev inspection. In
     // prod the registry is reachable through @pascal-app/core's
     // exports only.
     if (typeof globalThis !== 'undefined') {
-      ;(globalThis as { __pascalNodeRegistry?: typeof nodeRegistry }).__pascalNodeRegistry =
+      ;(globalThis as { __beeaverNodeRegistry?: typeof nodeRegistry }).__beeaverNodeRegistry =
         nodeRegistry
     }
   }
@@ -75,7 +75,7 @@ export async function loadExternalPlugins(): Promise<void> {
   }
   if (isDev() && externals.length > 0 && typeof console !== 'undefined') {
     // biome-ignore lint/suspicious/noConsole: dev-only verification log
-    console.info(`[pascal:registry] + ${externals.length} discovered plugin(s)`)
+    console.info(`[beeaver:registry] + ${externals.length} discovered plugin(s)`)
   }
 }
 
